@@ -1,5 +1,6 @@
 import java.io.*;
 import java.util.*;
+import javazoom.jl.player.Player;
 
 public class Main {
 
@@ -71,6 +72,13 @@ public class Main {
                                    song.getAuthor() + " (" +
                                    song.getLength() + " seconds)");
             }
+            
+            
+            // test song 1:
+            Song song = songs.get(0);
+            song.play();
+            
+            System.out.println("playing song :)");
 
         } catch (FileNotFoundException e) {
             System.out.println("Could not find songs.csv!");
@@ -87,6 +95,11 @@ class Song {
     private int length;
     private String cover;
     private String fileName;
+    private Player player;
+    
+    private volatile boolean paused = false;
+   private volatile boolean stopped = true;
+   private final Object pauseLock = new Object();
 
     public Song(String songName, String author, String album,
                 int length, String cover, String fileName) {
@@ -121,4 +134,76 @@ class Song {
     public String getFileName() {
         return fileName;
     }
+    
+    
+    
+   /**
+    * Plays the song from the beginning.
+    */
+   public void play() {
+       stop();
+   
+       try {
+           player = new Player(new FileInputStream(fileName));
+           stopped = false;
+           paused = false;
+   
+           Thread thread = new Thread(() -> {
+               try {
+                   while (!stopped) {
+   
+                       synchronized (pauseLock) {
+                           while (paused && !stopped) {
+                               pauseLock.wait();
+                           }
+                       }
+   
+                       if (stopped || !player.play(1)) {
+                           break;
+                       }
+                   }
+               } catch (Exception e) {
+                   if (!stopped) {
+                       System.out.println("Playback error: " + e.getMessage());
+                   }
+               }
+           });
+   
+           thread.start();
+   
+       } catch (Exception e) {
+           System.out.println("Could not play song.");
+       }
+   }
+   
+   
+   /**
+    * Pauses the current song.
+    */
+   public void pause() {
+       paused = true;
+   }
+   
+   /**
+    * Resumes the paused song.
+    */
+   public void resume() {
+       synchronized (pauseLock) {
+           paused = false;
+           pauseLock.notifyAll();
+       }
+   }
+   
+   /**
+    * Completely stops playback.
+    */
+   public void stop() {
+       stopped = true;
+       resume();
+   
+       if (player != null) {
+           player.close();
+           player = null;
+       }
+   }  
 }
