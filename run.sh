@@ -1,0 +1,1 @@
+javac -cp acm.jar gui.java && java -cp ".:acm.jar" gui

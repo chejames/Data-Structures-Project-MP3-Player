@@ -1,0 +1,1 @@
+javac -cp acm.jar:jlayer-1.0.1.jar Feed.java && java -cp ".:acm.jar:jlayer-1.0.1.jar" Feed

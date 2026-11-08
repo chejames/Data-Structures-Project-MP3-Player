@@ -1,0 +1,1 @@
+javac -cp jlayer-1.0.1.jar Main.java && java -cp ".:jlayer-1.0.1.jar" Main
